@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sur la route — Covoiturage collège</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1EFFB;
+    --paper:#FFFFFF;
+    --ink:#211E3D;
+    --muted-solid:#6B6690;
+    --line:#DEDAF0;
+    --line-soft:#E9E6F6;
+    --amber:#EE8C3E;
+    --amber-soft:#FCE7D3;
+    --teal:#2F9C8D;
+    --teal-soft:#D9F1EC;
+    --indigo:#5A55A8;
+    --indigo-soft:#E3E1F5;
+    --danger:#C0503D;
+    --danger-soft:#F6DFD8;
+    --radius:16px;
+    --shadow:0 1px 2px rgba(33,30,61,.06), 0 8px 24px -12px rgba(33,30,61,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181628;
+      --paper:#221F3B;
+      --ink:#F1EFFB;
+      --muted-solid:#A29CC7;
+      --line:#332F55;
+      --line-soft:#2A2747;
+      --amber-soft:#4A3420;
+      --teal-soft:#1C3D38;
+      --indigo-soft:#332F55;
+      --danger-soft:#432722;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  .wrap{max-width:640px;margin:0 auto;padding:0 18px;}
+
+  header.top{padding:22px 0 10px;}
+  .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .brand{display:flex;align-items:center;gap:8px;font-family:'Fraunces',serif;font-size:19px;font-weight:600;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);}
+  .admin-toggle{
+    border:1px solid var(--line);background:var(--paper);color:var(--muted-solid);
+    border-radius:100px;padding:7px 14px;font-size:13px;cursor:pointer;
+  }
+  .admin-toggle.on{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+
+  /* Identity bar */
+  .id-box{
+    background:var(--paper);border:1px solid var(--line-soft);border-radius:14px;
+    padding:11px 13px;margin-bottom:14px;box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+  .id-box.logged{background:var(--teal-soft);border-color:transparent;}
+  .id-box select, .id-box input{
+    font-family:inherit;font-size:13.5px;padding:8px 10px;border-radius:9px;
+    border:1px solid var(--line);background:var(--bg);color:var(--ink);flex:1;min-width:90px;
+  }
+  .id-box .lbl{font-size:13px;color:var(--muted-solid);flex-shrink:0;}
+  .id-box button{
+    border:none;border-radius:9px;padding:8px 14px;background:var(--ink);color:var(--bg);
+    font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;
+  }
+  .id-box.logged button{background:none;border:1px solid rgba(0,0,0,.15);color:var(--ink);}
+  .id-box .who{font-size:14px;flex:1;}
+  .id-box .who b{font-family:'Fraunces',serif;}
+
+  .date-hero{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
+  .date-hero .day-name{font-size:34px;}
+  .date-hero .day-date{font-size:14px;color:var(--muted-solid);font-weight:500;}
+  .nav-arrows{display:flex;gap:6px;}
+  .nav-arrows button{
+    width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--paper);
+    color:var(--ink);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .nav-arrows button:active{transform:scale(0.94);}
+
+  .week-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:4px;scrollbar-width:none;}
+  .week-tabs::-webkit-scrollbar{display:none;}
+  .week-tab{
+    flex:1;min-width:52px;text-align:center;padding:9px 4px 8px;border-radius:12px;
+    border:1px solid var(--line);background:var(--paper);cursor:pointer;font-size:12.5px;
+    color:var(--muted-solid);font-weight:500;
+  }
+  .week-tab .num{display:block;font-family:'Fraunces',serif;font-size:16px;color:var(--ink);margin-top:2px;font-weight:600;}
+  .week-tab.active{background:var(--ink);border-color:var(--ink);color:var(--bg);}
+  .week-tab.active .num{color:var(--bg);}
+  .week-tab.today{box-shadow:0 0 0 2px var(--amber) inset;}
+
+  .driver-filter{display:flex;gap:6px;margin-top:12px;overflow-x:auto;scrollbar-width:none;}
+  .driver-filter::-webkit-scrollbar{display:none;}
+  .driver-chip{
+    flex-shrink:0;padding:8px 14px;border-radius:100px;border:1px solid var(--line);
+    background:var(--paper);color:var(--muted-solid);font-size:13px;font-weight:500;
+    cursor:pointer;white-space:nowrap;
+  }
+  .driver-chip.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+
+  .summary-banner{
+    margin-top:16px;background:var(--teal-soft);border-radius:var(--radius);padding:14px 16px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .summary-banner .emoji{font-size:22px;}
+  .summary-banner .txt{font-size:14px;line-height:1.5;}
+  .summary-banner .txt b{font-family:'Fraunces',serif;font-weight:600;}
+  .summary-banner.none{background:var(--line-soft);color:var(--muted-solid);}
+
+  .board{margin-top:22px;display:flex;flex-direction:column;gap:10px;}
+  .slot{
+    background:var(--paper);border:1px solid var(--line-soft);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:14px 16px;display:flex;gap:14px;
+    opacity:0;animation:rise .45s ease forwards;
+  }
+  .slot:nth-child(1){animation-delay:.02s;}
+  .slot:nth-child(2){animation-delay:.08s;}
+  .slot:nth-child(3){animation-delay:.14s;}
+  .slot:nth-child(4){animation-delay:.2s;}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .slot-time{font-family:'Fraunces',serif;font-weight:600;font-size:20px;min-width:58px;color:var(--ink);padding-top:2px;}
+  .slot-body{flex:1;display:flex;flex-direction:column;gap:10px;}
+
+  .offer-card{background:var(--bg);border-radius:12px;padding:11px 12px;}
+  .offer-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;}
+  .offer-driver{display:flex;align-items:center;gap:9px;}
+  .veh-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+  .veh-badge.voiture{background:var(--amber-soft);}
+  .veh-badge.moto{background:var(--teal-soft);}
+  .veh-badge.bus{background:var(--indigo-soft);}
+  .offer-driver .nom{font-weight:600;font-size:14.5px;}
+  .cap-badge{font-size:12px;color:var(--muted-solid);font-weight:600;background:var(--paper);padding:4px 9px;border-radius:100px;}
+  .cap-badge.full{color:var(--danger);}
+  .cap-badge.over{color:#fff;background:var(--danger);}
+  .offer-admin-del{border:none;background:none;color:var(--muted-solid);cursor:pointer;font-size:14px;opacity:.6;}
+
+  .confirm-badge{
+    font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:100px;
+    background:var(--line-soft);color:var(--muted-solid);
+  }
+  .confirm-badge.on{background:var(--teal);color:#fff;cursor:pointer;}
+  .confirm-badge.off{cursor:pointer;}
+
+  .notify-btns{display:flex;gap:4px;}
+  .notify-btns a{
+    display:flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;background:var(--paper);
+    text-decoration:none;font-size:11px;
+  }
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .eleve-chip{
+    display:flex;align-items:center;gap:6px;background:var(--paper);border-radius:100px;
+    padding:6px 10px 6px 12px;font-size:13px;font-weight:500;
+  }
+  .eleve-chip.mine{background:var(--teal);color:#fff;}
+  .eleve-chip button{border:none;background:none;color:inherit;opacity:.6;cursor:pointer;font-size:12px;padding:0;}
+
+  .pick-btn{
+    border:none;background:var(--teal);color:#fff;
+    border-radius:100px;padding:9px 16px;font-size:13px;cursor:pointer;font-weight:600;
+    box-shadow:0 2px 6px -1px rgba(47,156,141,.5);
+    margin-top:2px;display:inline-block;
+  }
+  .pick-btn:active{transform:scale(.97);}
+  .pick-btn:disabled{background:var(--line);color:var(--muted-solid);box-shadow:none;cursor:default;}
+  .pick-btn.mine-elsewhere{background:var(--amber);box-shadow:0 2px 6px -1px rgba(238,140,62,.5);}
+
+  .admin-add-row{display:flex;gap:6px;margin-top:2px;}
+  .admin-add-row select{flex:1;font-size:12.5px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);}
+  .admin-add-row button{border:none;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;}
+
+  .empty-slot{font-size:13px;color:var(--muted-solid);padding:8px 2px;}
+  .empty-day{text-align:center;padding:50px 20px;color:var(--muted-solid);}
+  .empty-day .emoji{font-size:30px;margin-bottom:8px;}
+  .empty-day p{margin:4px 0 0;font-size:14px;}
+
+  .admin-panel{
+    margin-top:20px;background:var(--paper);border:1px solid var(--line-soft);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);
+  }
+  .admin-panel h3{font-size:15px;margin-bottom:12px;}
+  .add-row{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line-soft);}
+  select, input[type=date], input[type=password], input[type=text], input[type=number]{
+    font-family:inherit;font-size:14px;padding:10px 12px;border-radius:10px;
+    border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;
+  }
+  .row3{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .row3-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .btn{border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn-primary{background:var(--ink);color:var(--bg);}
+  .btn-ghost{background:var(--bg);color:var(--ink);border:1px solid var(--line);}
+  .btn:active{transform:scale(.97);}
+  .btn-full{width:100%;}
+
+  .dup-box{margin-top:16px;padding-top:16px;border-top:1px solid var(--line-soft);}
+  .dup-days{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+  .dup-chip{padding:7px 12px;border-radius:100px;border:1px solid var(--line);background:var(--bg);font-size:12.5px;cursor:pointer;color:var(--muted-solid);}
+  .dup-chip.picked{background:var(--teal);border-color:var(--teal);color:#fff;}
+
+  .pin-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .pin-row .nom{flex:1;font-size:13.5px;font-weight:500;}
+  .pin-row input{width:90px;flex:none;padding:7px 9px;font-size:13px;}
+  .pin-row button{flex:none;border:none;background:var(--ink);color:var(--bg);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);
+    background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:100px;font-size:13.5px;
+    opacity:0;pointer-events:none;transition:.25s ease;box-shadow:0 8px 20px rgba(0,0,0,.25);z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .lock-screen{max-width:340px;margin:80px auto 0;text-align:center;padding:0 20px;}
+  .lock-screen .emoji{font-size:32px;}
+  .lock-screen h2{margin:10px 0 4px;font-size:20px;}
+  .lock-screen p{color:var(--muted-solid);font-size:13.5px;margin:0 0 18px;}
+  .lock-screen input{margin-bottom:10px;}
+
+  .cap-warning{font-size:12px;color:var(--danger);background:var(--danger-soft);padding:7px 10px;border-radius:8px;margin-top:2px;}
+  .hint{font-size:12px;color:var(--muted-solid);margin-top:8px;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <div class="brand"><span class="dot"></span>Sur la route</div>
+      <button class="admin-toggle" id="adminToggleBtn">Admin</button>
+    </div>
+
+    <div id="identityBar"></div>
+
+    <div class="date-hero">
+      <div>
+        <div class="day-name display" id="dayName">—</div>
+        <div class="day-date" id="dayDate">—</div>
+      </div>
+      <div class="nav-arrows">
+        <button id="prevDay">‹</button>
+        <button id="nextDay">›</button>
+      </div>
+    </div>
+
+    <div class="week-tabs" id="weekTabs"></div>
+    <div class="driver-filter" id="driverFilter"></div>
+  </header>
+
+  <div id="driverSummary"></div>
+
+  <main id="board" class="board"></main>
+
+  <section id="adminSection" style="display:none;"></section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://bgkojsmglkmamgrhzlbt.supabase.co/rest/v1';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJna29qc21nbGttYW1ncmh6bGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NTUxOTksImV4cCI6MjEwNTMzMTE5OX0.IBSmetYAgxC0QwoGJXa1hrf3gB_dplN2ozb1awPnj_4';
+const ADMIN_PASSWORD = 'college2026'; // <- change-le ici si tu veux un autre mot de passe
+
+const HEADERS = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' };
+
+const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const JOURS_COURT = ['D','L','M','M','J','V','S'];
+const MOIS = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const SLOTS = ['08:30','09:30','10:30','11:30'];
+
+let state = {
+  selectedDate: todayISO(),
+  eleves: [],
+  conducteurs: [],
+  offres: [],
+  isAdmin: sessionStorage.getItem('covoit_admin') === '1',
+  driverFilter: localStorage.getItem('covoit_driver') || 'all',
+  identity: loadIdentity()
+};
+
+function loadIdentity(){
+  try{ return JSON.parse(localStorage.getItem('covoit_identity')); }catch(e){ return null; }
+}
+function saveIdentity(id){
+  state.identity = id;
+  if(id) localStorage.setItem('covoit_identity', JSON.stringify(id));
+  else localStorage.removeItem('covoit_identity');
+}
+
+function todayISO(){ return isoFromDate(new Date()); }
+function isoFromDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function dateFromISO(iso){ const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(iso, n){ const d = dateFromISO(iso); d.setDate(d.getDate()+n); return isoFromDate(d); }
+function startOfWeek(iso){ const d = dateFromISO(iso); const day = d.getDay(); const diff = day === 0 ? -6 : 1 - day; d.setDate(d.getDate()+diff); return isoFromDate(d); }
+function vehicleEmoji(v){ return v === 'moto' ? '🏍️' : v === 'bus' ? '🚌' : '🚗'; }
+
+async function api(path, options={}){
+  const res = await fetch(`${SUPABASE_URL}${path}`, {
+    ...options,
+    headers: {...HEADERS, ...(options.headers||{}), ...(options.method && options.method !== 'GET' ? {Prefer:'return=representation'} : {})}
+  });
+  if(!res.ok){ const t = await res.text(); throw new Error(t || res.statusText); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadStatic(){
+  const [eleves, conducteurs] = await Promise.all([
+    api('/eleves?select=*&order=id'),
+    api('/conducteurs?select=*&order=id')
+  ]);
+  state.eleves = eleves;
+  state.conducteurs = conducteurs;
+}
+
+async function loadOffres(){
+  state.offres = await api(`/offres?date=eq.${state.selectedDate}&select=*,conducteurs(nom,a_moto),choix(id,eleve_id,eleves(nom,telephone))&order=heure`);
+}
+
+// ---------- Identity bar ----------
+function renderIdentityBar(){
+  const el = document.getElementById('identityBar');
+  if(state.identity){
+    el.innerHTML = `<div class="id-box logged"><div class="who">👋 <b>${state.identity.nom}</b></div><button id="idLogout">Changer</button></div>`;
+    document.getElementById('idLogout').onclick = () => { saveIdentity(null); renderIdentityBar(); renderBoard(); };
+    return;
+  }
+  el.innerHTML = `
+    <div class="id-box">
+      <span class="lbl">Qui es-tu ?</span>
+      <select id="idRole">
+        <option value="eleve">Élève</option>
+        <option value="conducteur">Conducteur</option>
+      </select>
+      <select id="idName"></select>
+      <input type="password" id="idPin" placeholder="Code PIN" maxlength="8">
+      <button id="idSubmit">Entrer</button>
+    </div>
+  `;
+  const fillNames = () => {
+    const role = document.getElementById('idRole').value;
+    const list = role === 'eleve' ? state.eleves : state.conducteurs;
+    document.getElementById('idName').innerHTML = list.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
+  };
+  fillNames();
+  document.getElementById('idRole').onchange = fillNames;
+  document.getElementById('idSubmit').onclick = () => {
+    const role = document.getElementById('idRole').value;
+    const id = document.getElementById('idName').value;
+    const pin = document.getElementById('idPin').value.trim();
+    const list = role === 'eleve' ? state.eleves : state.conducteurs;
+    const person = list.find(p => String(p.id) === String(id));
+    if(person && String(person.pin || '0000') === pin){
+      saveIdentity({type: role, id: person.id, nom: person.nom});
+      if(role === 'conducteur'){ state.driverFilter = String(person.id); localStorage.setItem('covoit_driver', state.driverFilter); }
+      showToast(`Bienvenue ${person.nom} !`);
+      renderIdentityBar();
+      renderBoard();
+    } else {
+      showToast('PIN incorrect');
+    }
+  };
+}
+
+// ---------- Header / navigation ----------
+function renderHeader(){
+  const d = dateFromISO(state.selectedDate);
+  document.getElementById('dayName').textContent = JOURS[d.getDay()];
+  document.getElementById('dayDate').textContent = `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
+
+  const tabsEl = document.getElementById('weekTabs');
+  const weekStart = startOfWeek(state.selectedDate);
+  tabsEl.innerHTML = '';
+  for(let i=0;i<5;i++){
+    const iso = addDays(weekStart, i);
+    const dd = dateFromISO(iso);
+    const isActive = iso === state.selectedDate;
+    const isToday = iso === todayISO();
+    const tab = document.createElement('div');
+    tab.className = 'week-tab' + (isActive?' active':'') + (isToday?' today':'');
+    tab.innerHTML = `${JOURS_COURT[dd.getDay()]}<span class="num">${dd.getDate()}</span>`;
+    tab.onclick = () => { state.selectedDate = iso; refresh(); };
+    tabsEl.appendChild(tab);
+  }
+}
+
+function renderDriverFilter(){
+  const el = document.getElementById('driverFilter');
+  const chips = [`<div class="driver-chip ${state.driverFilter==='all'?'active':''}" data-id="all">Tout le monde</div>`]
+    .concat(state.conducteurs.map(c => `<div class="driver-chip ${String(state.driverFilter)===String(c.id)?'active':''}" data-id="${c.id}">${c.nom}</div>`));
+  el.innerHTML = chips.join('');
+  el.querySelectorAll('.driver-chip').forEach(chip => {
+    chip.onclick = () => { state.driverFilter = chip.dataset.id; localStorage.setItem('covoit_driver', state.driverFilter); renderBoard(); };
+  });
+}
+
+function renderSummaryBanner(matched){
+  const el = document.getElementById('driverSummary');
+  if(state.driverFilter === 'all'){ el.innerHTML = ''; return; }
+  const cond = state.conducteurs.find(c => String(c.id) === String(state.driverFilter));
+  const name = cond ? cond.nom : '';
+  const withPassengers = matched.filter(o => o.choix.length > 0);
+  if(withPassengers.length === 0){
+    el.innerHTML = `<div class="wrap"><div class="summary-banner none"><div class="emoji">😌</div><div class="txt">${name} ne conduit personne ce jour-là.</div></div></div>`;
+    return;
+  }
+  const detail = withPassengers.map(o => `<b>${o.heure}</b> ${o.choix.map(c=>c.eleves?.nom).join(', ')}`).join(' · ');
+  el.innerHTML = `<div class="wrap"><div class="summary-banner"><div class="emoji">🚗</div><div class="txt">${name} conduit aujourd'hui : ${detail}</div></div></div>`;
+}
+
+// ---------- Board ----------
+function myChoiceToday(){
+  // returns {offreId, choixId} if the logged-in eleve already picked something today
+  if(!state.identity || state.identity.type !== 'eleve') return null;
+  for(const o of state.offres){
+    const c = o.choix.find(c => String(c.eleve_id) === String(state.identity.id));
+    if(c) return {offreId: o.id, choixId: c.id};
+  }
+  return null;
+}
+
+function renderBoard(){
+  renderDriverFilter();
+  const board = document.getElementById('board');
+  const filtered = state.driverFilter === 'all'
+    ? state.offres
+    : state.offres.filter(o => String(o.conducteur_id) === String(state.driverFilter));
+
+  renderSummaryBanner(filtered);
+
+  const bySlot = {};
+  SLOTS.forEach(s => bySlot[s] = []);
+  filtered.forEach(o => { if(!bySlot[o.heure]) bySlot[o.heure] = []; bySlot[o.heure].push(o); });
+  const usedSlots = Object.keys(bySlot).filter(s => bySlot[s].length > 0).sort();
+
+  if(usedSlots.length === 0){
+    board.innerHTML = `<div class="empty-day"><div class="emoji">🌤️</div><h3 class="display">Rien de proposé</h3><p>${state.isAdmin ? "Crée un créneau ci-dessous." : "Pas de covoiturage proposé pour ce jour."}</p></div>`;
+    renderAdmin();
+    return;
+  }
+
+  const mine = myChoiceToday();
+
+  board.innerHTML = usedSlots.map(slot => `
+    <div class="slot">
+      <div class="slot-time">${slot}</div>
+      <div class="slot-body">
+        ${bySlot[slot].map(o => renderOfferCard(o, mine)).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  // wire up interactive buttons
+  filtered.forEach(o => {
+    const pickBtn = document.getElementById(`pick-${o.id}`);
+    if(pickBtn) pickBtn.onclick = () => chooseOffer(o.id);
+    o.choix.forEach(c => {
+      const relBtn = document.getElementById(`release-${c.id}`);
+      if(relBtn) relBtn.onclick = () => releaseChoice(c.id);
+    });
+    const delBtn = document.getElementById(`deloffre-${o.id}`);
+    if(delBtn) delBtn.onclick = () => deleteOffre(o.id);
+    const confirmBtn = document.getElementById(`confirm-${o.id}`);
+    if(confirmBtn) confirmBtn.onclick = () => toggleConfirme(o.id, !o.confirme);
+    const addBtn = document.getElementById(`adminadd-${o.id}`);
+    if(addBtn) addBtn.onclick = () => {
+      const sel = document.getElementById(`adminaddsel-${o.id}`);
+      if(sel.value) chooseOffer(o.id, sel.value);
+    };
+  });
+
+  renderAdmin();
+}
+
+function phoneClean(tel){
+  if(!tel) return null;
+  let t = tel.replace(/[^\d+]/g, '');
+  if(t.startsWith('0')) t = '33' + t.slice(1);
+  if(t.startsWith('+')) t = t.slice(1);
+  return t;
+}
+
+function renderOfferCard(o, mine){
+  const used = o.choix.length;
+  const over = used > o.capacite;
+  const full = used >= o.capacite;
+  const driverLabel = o.vehicule === 'bus' ? 'Bus' : (o.conducteurs?.nom || '—');
+  const vehLabel = o.vehicule === 'bus' ? 'bus' : (o.vehicule === 'moto' ? 'moto' : 'voiture');
+
+  const chips = o.choix.map(c => {
+    const isMine = state.identity && state.identity.type === 'eleve' && String(c.eleve_id) === String(state.identity.id);
+    const canRemove = state.isAdmin || isMine;
+    let notifyHtml = '';
+    if(state.isAdmin && o.confirme){
+      const phone = phoneClean(c.eleves?.telephone);
+      const msg = encodeURIComponent(`Salut ${c.eleves?.nom} ! C'est confirmé : ${o.heure}, ${driverLabel === 'Bus' ? 'en bus' : 'avec ' + driverLabel} (${vehLabel}).`);
+      if(phone){
+        notifyHtml = `<div class="notify-btns">
+          <a href="https://wa.me/${phone}?text=${msg}" target="_blank" title="WhatsApp">💬</a>
+          <a href="sms:+${phone}&body=${msg}" title="SMS">✉️</a>
+        </div>`;
+      } else {
+        notifyHtml = `<span class="hint" style="margin:0;">pas de tel.</span>`;
+      }
+    }
+    return `<div class="eleve-chip ${isMine?'mine':''}">${c.eleves?.nom || '—'}${canRemove ? `<button id="release-${c.id}">✕</button>` : ''}${notifyHtml}</div>`;
+  }).join('');
+
+  let actionHtml = '';
+  if(state.identity && state.identity.type === 'eleve'){
+    const alreadyHere = mine && mine.offreId === o.id;
+    const alreadyElsewhere = mine && mine.offreId !== o.id;
+    if(alreadyHere){
+      actionHtml = ''; // chip already shows "mine" with a remove button
+    } else if(full){
+      actionHtml = `<button class="pick-btn" disabled>Complet</button>`;
+    } else {
+      actionHtml = `<button class="pick-btn ${alreadyElsewhere?'mine-elsewhere':''}" id="pick-${o.id}">${alreadyElsewhere ? 'Changer pour lui' : 'Je veux lui'}</button>`;
+    }
+  }
+
+  let adminAdd = '';
+  if(state.isAdmin){
+    const available = state.eleves;
+    adminAdd = `
+      <div class="admin-add-row">
+        <select id="adminaddsel-${o.id}">
+          <option value="">+ ajouter un élève…</option>
+          ${available.map(e => `<option value="${e.id}">${e.nom}</option>`).join('')}
+        </select>
+        <button id="adminadd-${o.id}">Ajouter</button>
+      </div>`;
+  }
+
+  return `
+    <div class="offer-card">
+      <div class="offer-top">
+        <div class="offer-driver">
+          <div class="veh-badge ${o.vehicule}">${vehicleEmoji(o.vehicule)}</div>
+          <div class="nom">${driverLabel}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="confirm-badge ${o.confirme?'on':'off'}" ${state.isAdmin?`id="confirm-${o.id}"`:''}>${o.confirme ? '✅ Sûr' : '⏳ Pas sûr'}</div>
+          <div class="cap-badge ${over?'over':(full?'full':'')}">${used}/${o.capacite}</div>
+          ${state.isAdmin ? `<button class="offer-admin-del" id="deloffre-${o.id}">✕</button>` : ''}
+        </div>
+      </div>
+      <div class="chips">${chips || '<span class="empty-slot">Personne pour le moment</span>'}</div>
+      ${actionHtml}
+      ${adminAdd}
+    </div>
+  `;
+}
+
+async function chooseOffer(offreId, eleveIdOverride){
+  const eleveId = eleveIdOverride || (state.identity && state.identity.type === 'eleve' ? state.identity.id : null);
+  if(!eleveId){ showToast('Connecte-toi comme élève pour choisir'); return; }
+
+  const target = state.offres.find(o => o.id === offreId);
+  if(target.choix.length >= target.capacite){ showToast('Complet ⚠️'); return; }
+
+  try{
+    // remove any existing choice this student has today (one trip per day)
+    for(const o of state.offres){
+      const existing = o.choix.find(c => String(c.eleve_id) === String(eleveId));
+      if(existing) await api(`/choix?id=eq.${existing.id}`, {method:'DELETE'});
+    }
+    await api('/choix', {method:'POST', body: JSON.stringify({offre_id: offreId, eleve_id: Number(eleveId)})});
+    showToast('Choix enregistré ✓');
+    await loadOffres();
+    renderBoard();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+async function releaseChoice(choixId){
+  try{
+    await api(`/choix?id=eq.${choixId}`, {method:'DELETE'});
+    showToast('Retiré');
+    await loadOffres();
+    renderBoard();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+async function deleteOffre(offreId){
+  try{
+    await api(`/offres?id=eq.${offreId}`, {method:'DELETE'});
+    showToast('Créneau supprimé');
+    await loadOffres();
+    renderBoard();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+async function toggleConfirme(offreId, value){
+  try{
+    await api(`/offres?id=eq.${offreId}`, {method:'PATCH', body: JSON.stringify({confirme: value})});
+    showToast(value ? 'Créneau marqué Sûr ✓' : 'Créneau marqué Pas sûr');
+    await loadOffres();
+    renderBoard();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+// ---------- Admin panel ----------
+function renderAdmin(){
+  const section = document.getElementById('adminSection');
+  if(!state.isAdmin){ section.style.display = 'none'; section.innerHTML=''; return; }
+  section.style.display = 'block';
+
+  const conducteursOpt = state.conducteurs.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+
+  section.innerHTML = `
+    <div class="admin-panel">
+      <h3>Proposer un créneau — ${document.getElementById('dayName').textContent} ${document.getElementById('dayDate').textContent}</h3>
+      <div class="add-row">
+        <div class="row3">
+          <select id="newHeure">
+            <option value="08:30">08h30</option>
+            <option value="09:30">09h30</option>
+            <option value="10:30">10h30</option>
+            <option value="11:30">11h30</option>
+          </select>
+          <select id="newVehicule">
+            <option value="voiture">🚗 Voiture</option>
+            <option value="moto">🏍️ Moto</option>
+            <option value="bus">🚌 Bus</option>
+          </select>
+        </div>
+        <div id="conducteurWrap">
+          <select id="newConducteur">${conducteursOpt}</select>
+        </div>
+        <div class="row3">
+          <input type="number" id="newCapacite" min="1" max="20" value="3" placeholder="Places">
+          <button class="btn btn-primary" id="addOffreBtn">Proposer</button>
+        </div>
+        <p class="hint">La capacité se pré-remplit selon le véhicule, mais tu peux la baisser (ex : Roman seulement 2 places un jour donné).</p>
+      </div>
+
+      <div class="dup-box">
+        <h3 style="margin-bottom:6px;">Dupliquer ce jour</h3>
+        <p class="hint" style="margin-top:0;">Copie tous les créneaux (et les choix) de ${document.getElementById('dayName').textContent} vers d'autres jours.</p>
+        <div class="dup-days" id="dupDays"></div>
+        <button class="btn btn-ghost btn-full" id="dupBtn">Copier vers les jours sélectionnés</button>
+      </div>
+
+      <div class="dup-box">
+        <h3 style="margin-bottom:10px;">Codes PIN</h3>
+        <div id="pinList"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('newVehicule').onchange = updateConducteurOptions;
+  updateConducteurOptions();
+  document.getElementById('addOffreBtn').onclick = addOffre;
+
+  const dupEl = document.getElementById('dupDays');
+  for(let i=1;i<=4;i++){
+    const iso = addDays(state.selectedDate, i*7);
+    const dd = dateFromISO(iso);
+    const chip = document.createElement('div');
+    chip.className = 'dup-chip';
+    chip.textContent = `${dd.getDate()} ${MOIS[dd.getMonth()]}`;
+    chip.dataset.iso = iso;
+    chip.onclick = () => chip.classList.toggle('picked');
+    dupEl.appendChild(chip);
+  }
+  document.getElementById('dupBtn').onclick = duplicateDay;
+
+  renderPinList();
+}
+
+function updateConducteurOptions(){
+  const vehSelect = document.getElementById('newVehicule');
+  const condWrap = document.getElementById('conducteurWrap');
+  const capInput = document.getElementById('newCapacite');
+  const veh = vehSelect.value;
+
+  if(veh === 'bus'){
+    condWrap.style.display = 'none';
+    capInput.value = 20;
+    return;
+  }
+  condWrap.style.display = '';
+  capInput.value = veh === 'moto' ? 1 : 3;
+
+  const condSelect = document.getElementById('newConducteur');
+  const eligible = veh === 'moto' ? state.conducteurs.filter(c => c.a_moto) : state.conducteurs;
+  const prevValue = condSelect.value;
+  condSelect.innerHTML = eligible.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+  if(eligible.some(c => String(c.id) === String(prevValue))) condSelect.value = prevValue;
+}
+
+async function addOffre(){
+  const heure = document.getElementById('newHeure').value;
+  const vehicule = document.getElementById('newVehicule').value;
+  const capacite = Number(document.getElementById('newCapacite').value) || 1;
+  const conducteur_id = vehicule === 'bus' ? null : Number(document.getElementById('newConducteur').value);
+
+  try{
+    await api('/offres', {method:'POST', body: JSON.stringify({date: state.selectedDate, heure, vehicule, capacite, conducteur_id})});
+    showToast('Créneau proposé ✓');
+    await loadOffres();
+    renderBoard();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+async function duplicateDay(){
+  const picked = Array.from(document.querySelectorAll('.dup-chip.picked')).map(c => c.dataset.iso);
+  if(picked.length === 0){ showToast('Choisis au moins une date'); return; }
+  if(state.offres.length === 0){ showToast('Rien à copier sur ce jour'); return; }
+
+  try{
+    for(const iso of picked){
+      for(const o of state.offres){
+        const created = await api('/offres', {
+          method:'POST',
+          body: JSON.stringify({date: iso, heure: o.heure, vehicule: o.vehicule, capacite: o.capacite, conducteur_id: o.conducteur_id})
+        });
+        const newOffreId = created[0].id;
+        for(const c of o.choix){
+          await api('/choix', {method:'POST', body: JSON.stringify({offre_id: newOffreId, eleve_id: c.eleve_id})});
+        }
+      }
+    }
+    showToast(`Copié vers ${picked.length} jour(s) ✓`);
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+function renderPinList(){
+  const el = document.getElementById('pinList');
+  const rows = [...state.eleves.map(p=>({...p, kind:'eleves'})), ...state.conducteurs.map(p=>({...p, kind:'conducteurs'}))];
+  el.innerHTML = rows.map(p => `
+    <div class="pin-row">
+      <div class="nom">${p.nom}</div>
+      <input type="text" maxlength="8" value="${p.pin || '0000'}" id="pin-${p.kind}-${p.id}" placeholder="PIN">
+      ${p.kind === 'eleves' ? `<input type="text" value="${p.telephone || ''}" id="tel-${p.kind}-${p.id}" placeholder="06...">` : ''}
+      <button data-kind="${p.kind}" data-id="${p.id}" class="pinSaveBtn">OK</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.pinSaveBtn').forEach(btn => {
+    btn.onclick = async () => {
+      const kind = btn.dataset.kind, id = btn.dataset.id;
+      const pin = document.getElementById(`pin-${kind}-${id}`).value.trim() || '0000';
+      const body = {pin};
+      const telEl = document.getElementById(`tel-${kind}-${id}`);
+      if(telEl) body.telephone = telEl.value.trim();
+      try{
+        await api(`/${kind}?id=eq.${id}`, {method:'PATCH', body: JSON.stringify(body)});
+        showToast('Enregistré ✓');
+        await loadStatic();
+      }catch(e){ showToast('Erreur : ' + e.message); }
+    };
+  });
+}
+
+// ---------- Toast ----------
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+// ---------- Admin lock screen ----------
+function renderLock(){
+  document.querySelector('.wrap').style.display = 'none';
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="wrap" id="lockWrap">
+      <div class="lock-screen">
+        <div class="emoji">🔒</div>
+        <h2 class="display">Mode admin</h2>
+        <p>Entre le mot de passe pour gérer le planning.</p>
+        <input type="password" id="pwInput" placeholder="Mot de passe">
+        <button class="btn btn-primary btn-full" id="pwSubmit">Entrer</button>
+        <div class="hint" id="pwError" style="color:var(--danger);"></div>
+      </div>
+    </div>
+  `);
+  document.getElementById('pwSubmit').onclick = checkPassword;
+  document.getElementById('pwInput').onkeydown = (e) => { if(e.key === 'Enter') checkPassword(); };
+}
+function checkPassword(){
+  const val = document.getElementById('pwInput').value;
+  if(val === ADMIN_PASSWORD){
+    sessionStorage.setItem('covoit_admin','1');
+    state.isAdmin = true;
+    document.getElementById('lockWrap').remove();
+    document.querySelector('.wrap').style.display = '';
+    document.getElementById('adminToggleBtn').classList.add('on');
+    document.getElementById('adminToggleBtn').textContent = 'Admin ✓';
+    renderBoard();
+  } else {
+    document.getElementById('pwError').textContent = 'Mot de passe incorrect';
+  }
+}
+
+document.getElementById('adminToggleBtn').onclick = () => {
+  if(state.isAdmin){
+    state.isAdmin = false;
+    sessionStorage.removeItem('covoit_admin');
+    document.getElementById('adminToggleBtn').classList.remove('on');
+    document.getElementById('adminToggleBtn').textContent = 'Admin';
+    renderBoard();
+  } else {
+    renderLock();
+  }
+};
+
+document.getElementById('prevDay').onclick = () => { state.selectedDate = addDays(state.selectedDate, -1); refresh(); };
+document.getElementById('nextDay').onclick = () => { state.selectedDate = addDays(state.selectedDate, 1); refresh(); };
+
+async function refresh(){
+  renderHeader();
+  await loadOffres();
+  renderBoard();
+}
+
+if(state.isAdmin){
+  document.getElementById('adminToggleBtn').classList.add('on');
+  document.getElementById('adminToggleBtn').textContent = 'Admin ✓';
+}
+
+(async function init(){
+  try{
+    await loadStatic();
+    renderIdentityBar();
+    await refresh();
+  }catch(e){
+    document.getElementById('board').innerHTML = `<div class="empty-day"><div class="emoji">⚠️</div><h3 class="display">Connexion impossible</h3><p>${e.message}</p></div>`;
+  }
+})();
+</script>
+</body>
+</html>
