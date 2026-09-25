@@ -285,6 +285,7 @@
 const SUPABASE_URL = 'https://bgkojsmglkmamgrhzlbt.supabase.co/rest/v1';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJna29qc21nbGttYW1ncmh6bGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NTUxOTksImV4cCI6MjEwNTMzMTE5OX0.IBSmetYAgxC0QwoGJXa1hrf3gB_dplN2ozb1awPnj_4';
 const ADMIN_PASSWORD = 'college2026'; // <- change-le ici si tu veux un autre mot de passe
+const ROMAN_PASSWORD = '12RV34'; // mot de passe restreint : gérer uniquement la dispo de Roman
 
 const HEADERS = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' };
 
@@ -298,7 +299,8 @@ let state = {
   eleves: [],
   conducteurs: [],
   offres: [],
-  isAdmin: sessionStorage.getItem('covoit_admin') === '1',
+  isAdmin: sessionStorage.getItem('covoit_admin') === 'full',
+  romanAccess: sessionStorage.getItem('covoit_admin') === 'roman',
   driverFilter: localStorage.getItem('covoit_driver') || 'all',
   identity: loadIdentity()
 };
@@ -460,7 +462,7 @@ function renderBoard(){
 
   if(usedSlots.length === 0){
     board.innerHTML = `<div class="empty-day"><div class="emoji">🌤️</div><h3 class="display">Rien de proposé</h3><p>${state.isAdmin ? "Crée un créneau ci-dessous." : "Pas de covoiturage proposé pour ce jour."}</p></div>`;
-    renderAdmin();
+    renderAdminOrRoman();
     return;
   }
 
@@ -494,7 +496,13 @@ function renderBoard(){
     };
   });
 
-  renderAdmin();
+  renderAdminOrRoman();
+}
+
+function renderAdminOrRoman(){
+  if(state.isAdmin) renderAdmin();
+  else if(state.romanAccess) renderRomanPanel();
+  else { const section = document.getElementById('adminSection'); section.style.display='none'; section.innerHTML=''; }
 }
 
 function phoneClean(tel){
@@ -750,6 +758,90 @@ async function duplicateDay(){
   }catch(e){ showToast('Erreur : ' + e.message); }
 }
 
+// ---------- Restricted "Disponibilité de Roman" panel (mot de passe 12RV34) ----------
+function renderRomanPanel(){
+  const section = document.getElementById('adminSection');
+  section.style.display = 'block';
+  const tomorrow = addDays(todayISO(), 1);
+  section.innerHTML = `
+    <div class="admin-panel">
+      <h3>Disponibilité de Roman</h3>
+      <p class="hint" style="margin-top:0;">Indique si Roman peut conduire, à quelle heure et combien de places il a. Si un autre trajet non confirmé existe à la même heure avec au plus ce nombre d'élèves, ils basculent automatiquement chez Roman et l'autre trajet est annulé. Si l'autre trajet est déjà "Sûr", ou qu'il a plus d'élèves que Roman ne peut en prendre, rien ne change.</p>
+      <div class="add-row">
+        <input type="date" id="romanDate" value="${tomorrow}">
+        <div class="row3">
+          <select id="romanHeure">
+            <option value="08:30">08h30</option>
+            <option value="09:30">09h30</option>
+            <option value="10:30">10h30</option>
+            <option value="11:30">11h30</option>
+          </select>
+          <input type="number" id="romanCap" min="1" max="3" value="3" placeholder="Places">
+        </div>
+        <button class="btn btn-primary btn-full" id="romanSubmitBtn">Enregistrer la disponibilité de Roman</button>
+      </div>
+      <div id="romanResult"></div>
+    </div>
+  `;
+  document.getElementById('romanSubmitBtn').onclick = submitRomanAvailability;
+}
+
+async function submitRomanAvailability(){
+  const date = document.getElementById('romanDate').value;
+  const heure = document.getElementById('romanHeure').value;
+  const capacite = Number(document.getElementById('romanCap').value) || 1;
+  const resultEl = document.getElementById('romanResult');
+  if(!date){ showToast('Choisis une date'); return; }
+
+  const roman = state.conducteurs.find(c => (c.nom||'').toLowerCase() === 'roman');
+  if(!roman){ showToast("Conducteur 'Roman' introuvable dans la base"); return; }
+
+  try{
+    const dayOffres = await api(`/offres?date=eq.${date}&heure=eq.${heure}&select=*,choix(id,eleve_id,eleves(nom))`);
+
+    let romanOffre = dayOffres.find(o => String(o.conducteur_id) === String(roman.id));
+    let romanOffreId, romanExistingCount;
+    if(romanOffre){
+      romanOffreId = romanOffre.id;
+      romanExistingCount = romanOffre.choix.length;
+      await api(`/offres?id=eq.${romanOffreId}`, {method:'PATCH', body: JSON.stringify({capacite})});
+    } else {
+      const created = await api('/offres', {method:'POST', body: JSON.stringify({date, heure, vehicule:'voiture', capacite, conducteur_id: roman.id, confirme:false})});
+      romanOffreId = created[0].id;
+      romanExistingCount = 0;
+    }
+
+    let remaining = capacite - romanExistingCount;
+    const others = dayOffres.filter(o => String(o.conducteur_id) !== String(roman.id));
+    const messages = [];
+
+    for(const other of others){
+      const count = other.choix.length;
+      if(count === 0) continue;
+      if(other.confirme){
+        messages.push(`Un trajet à ${heure} est déjà marqué "Sûr" — non modifié.`);
+        continue;
+      }
+      if(count <= remaining && count > 0){
+        for(const c of other.choix){
+          await api(`/choix?id=eq.${c.id}`, {method:'DELETE'});
+          await api('/choix', {method:'POST', body: JSON.stringify({offre_id: romanOffreId, eleve_id: c.eleve_id})});
+        }
+        await api(`/offres?id=eq.${other.id}`, {method:'DELETE'});
+        remaining -= count;
+        messages.push(`✓ Trajet annulé à ${heure} : ${count} élève(s) transféré(s) chez Roman.`);
+      } else {
+        messages.push(`Roman n'a pas assez de places (${remaining} restantes) pour les ${count} élève(s) d'un autre trajet à ${heure} — rien ne change.`);
+      }
+    }
+
+    showToast('Disponibilité enregistrée ✓');
+    resultEl.innerHTML = `<div class="hint">${messages.length ? messages.join('<br>') : "Aucun autre trajet à cette heure ce jour-là — la place de Roman est simplement enregistrée."}</div>`;
+
+    if(date === state.selectedDate) await refresh();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
 function renderPinList(){
   const el = document.getElementById('pinList');
   const rows = [...state.eleves.map(p=>({...p, kind:'eleves'})), ...state.conducteurs.map(p=>({...p, kind:'conducteurs'}))];
@@ -808,12 +900,20 @@ function renderLock(){
 function checkPassword(){
   const val = document.getElementById('pwInput').value;
   if(val === ADMIN_PASSWORD){
-    sessionStorage.setItem('covoit_admin','1');
-    state.isAdmin = true;
+    sessionStorage.setItem('covoit_admin','full');
+    state.isAdmin = true; state.romanAccess = false;
     document.getElementById('lockWrap').remove();
     document.querySelector('.wrap').style.display = '';
     document.getElementById('adminToggleBtn').classList.add('on');
     document.getElementById('adminToggleBtn').textContent = 'Admin ✓';
+    renderBoard();
+  } else if(val === ROMAN_PASSWORD){
+    sessionStorage.setItem('covoit_admin','roman');
+    state.isAdmin = false; state.romanAccess = true;
+    document.getElementById('lockWrap').remove();
+    document.querySelector('.wrap').style.display = '';
+    document.getElementById('adminToggleBtn').classList.add('on');
+    document.getElementById('adminToggleBtn').textContent = 'Dispo Roman ✓';
     renderBoard();
   } else {
     document.getElementById('pwError').textContent = 'Mot de passe incorrect';
@@ -821,8 +921,9 @@ function checkPassword(){
 }
 
 document.getElementById('adminToggleBtn').onclick = () => {
-  if(state.isAdmin){
+  if(state.isAdmin || state.romanAccess){
     state.isAdmin = false;
+    state.romanAccess = false;
     sessionStorage.removeItem('covoit_admin');
     document.getElementById('adminToggleBtn').classList.remove('on');
     document.getElementById('adminToggleBtn').textContent = 'Admin';
@@ -844,6 +945,9 @@ async function refresh(){
 if(state.isAdmin){
   document.getElementById('adminToggleBtn').classList.add('on');
   document.getElementById('adminToggleBtn').textContent = 'Admin ✓';
+} else if(state.romanAccess){
+  document.getElementById('adminToggleBtn').classList.add('on');
+  document.getElementById('adminToggleBtn').textContent = 'Dispo Roman ✓';
 }
 
 (async function init(){
